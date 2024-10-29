@@ -20,6 +20,8 @@ func CreateDeployer(cfg *config.Configuration) FunctionDeployer {
 		return newKnativeDeployer()
 	case "OpenWhisk", "OpenWhisk-RPS":
 		return newOpenWhiskDeployer()
+	case "URL":
+		return newURLDeployer()
 	default:
 		logrus.Fatal("Unsupported platform.")
 	}

@@ -32,6 +32,8 @@ func CreateInvoker(cfg *config.LoaderConfiguration, announceDoneExe *sync.WaitGr
 		}
 	case "OpenWhisk", "OpenWhisk-RPS":
 		return newOpenWhiskInvoker(announceDoneExe, readOpenWhiskMetadata)
+	case "URL":
+		return newURLInvoker(cfg)
 	default:
 		logrus.Fatal("Unsupported platform.")
 	}

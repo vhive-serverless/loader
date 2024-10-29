@@ -97,6 +97,7 @@ func main() {
 		"Dirigent-RPS",
 		"Dirigent-Dandelion-RPS",
 		"Dirigent-Dandelion",
+		"URL",
 	}
 
 	if !slices.Contains(supportedPlatforms, cfg.Platform) {
