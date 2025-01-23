@@ -17,9 +17,9 @@ require (
 
 require (
 	github.com/aws/aws-lambda-go v1.47.0
-	github.com/stretchr/testify v1.10.0
 	github.com/containerd/log v0.1.0
 	github.com/google/uuid v1.6.0
+	github.com/stretchr/testify v1.10.0
 	github.com/vhive-serverless/vSwarm/utils/protobuf/helloworld v0.0.0-20240827121957-11be651eb39a
 	github.com/vhive-serverless/vSwarm/utils/tracing/go v0.0.0-20240827121957-11be651eb39a
 	go.mongodb.org/mongo-driver v1.17.1
