@@ -2,6 +2,7 @@ package metric
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"os/exec"
 	"path"
@@ -171,42 +172,23 @@ func (m *MetricManager) collectActivatorLogs() {
 **/
 func (m *MetricManager) collectPrometheusSnapshot() {
 	log.Debug("Collecting prometheus snapshot from node: ", m.nodeGroup.MasterNode)
+	// Ensure output dir exists
 	promethOutputDir := path.Join(m.outputDir, PROMETH_DIR_NAME)
 	err := os.MkdirAll(promethOutputDir, 0755)
 	if err != nil {
 		log.Fatal(err)
 	}
-	// Retrieve prometheus snapshot
-	i := 10
-	var prometheusSnapshot types.PrometheusSnapshot
-	for i > 0 {
-		cmd := exec.Command("ssh", m.nodeGroup.MasterNode, "curl -XPOST http://localhost:9090/api/v1/admin/tsdb/snapshot")
-		out, err := cmd.CombinedOutput()
-		if err != nil {
-			if i == 1 {
-				log.Error("Failed to retrieve prometheus snapshot, did you set `DEPLOY_PROMETHEUS` to true in setup.cfg during setup? Error: ", err)
-			}
-			time.Sleep(100 * time.Millisecond)
-			i--
-			continue
-		}
-		re := regexp.MustCompile(`\{.*\}`)
-		jsonBytes := re.Find(out)
-		err = json.Unmarshal(jsonBytes, &prometheusSnapshot)
-
-		if err != nil {
-			log.Fatal(err)
-		}
-		if prometheusSnapshot.Status != "success" {
-			if i == 1 {
-				log.Error("Prometheus Snapshot failed")
-			} else {
-				log.Debug("Prometheus Snapshot not ready. Retrying...")
-			}
-			i--
-			continue
-		}
-		break
+	// Fetch prometheus snapshot with retries
+	snapshot, err := m.fetchPrometheusSnapshot(10)
+	// Handle failure to retrieve snapshot
+	if err != nil {
+		log.Error("Failed to retrieve Prometheus snapshot", err)
+		return
+	}
+	// Check if snapshot status is successful
+	if snapshot.Status != "success" {
+		log.Error("Prometheus snapshot status not successful: ", snapshot)
+		return
 	}
 	// Copy prometheus snapshot to file
 	var tempSnapshotDir = "~/tmp/prometheus_snapshot"
@@ -216,6 +198,39 @@ func (m *MetricManager) collectPrometheusSnapshot() {
 	ml_common.CopyRemoteFile(m.nodeGroup.MasterNode, tempSnapshotDir, path.Dir(promethOutputDir))
 	// remove temp directory
 	ml_common.RunRemoteCommand(m.nodeGroup.MasterNode, "rm -rf "+tempSnapshotDir)
+}
+
+/**
+* Fetches prometheus snapshot from master node with retries
+* The first call to snapshot endpoint always fails, so theres a need for maxAttempts > 1
+**/
+func (m *MetricManager) fetchPrometheusSnapshot(maxAttempts int) (types.PrometheusSnapshot, error) {
+	var snapshot types.PrometheusSnapshot
+	snapshotCmd := "curl -XPOST http://localhost:9090/api/v1/admin/tsdb/snapshot"
+	re := regexp.MustCompile(`\{.*\}`)
+
+	for attempts := maxAttempts; attempts > 0; attempts-- {
+		out, err := exec.Command("ssh", m.nodeGroup.MasterNode, snapshotCmd).CombinedOutput()
+		if err != nil {
+			// Last attempt and still failed
+			if attempts == 1 {
+				return snapshot, fmt.Errorf("failed to retrieve prometheus snapshot: %v", err)
+			}
+			time.Sleep(100 * time.Millisecond)
+			continue
+		}
+		// Unmarshal into snapshot struct
+		jsonBytes := re.Find(out)
+		if err = json.Unmarshal(jsonBytes, &snapshot); err != nil {
+			return snapshot, fmt.Errorf("failed to unmarshal prometheus snapshot: %v", err)
+		}
+		// Directly return if snapshot status is successful
+		if snapshot.Status == "success" {
+			return snapshot, nil
+		}
+		log.Debug("Prometheus snapshot not ready. Retrying...")
+	}
+	return snapshot, fmt.Errorf("exhausted all attempts to retrieve Prometheus snapshot")
 }
 
 /**
