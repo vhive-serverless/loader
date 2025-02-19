@@ -35,7 +35,6 @@ type MultiLoaderRunner struct {
 	DryRun            bool
 	Platform          string
 	FailFast          bool
-	NodeGroup         types.NodeGroup
 	MetricManager     *metric.MetricManager
 }
 
@@ -52,14 +51,13 @@ func NewMultiLoaderRunner(configPath string, verbosity string, failFast bool) (*
 	platform := ml_common.DeterminePlatformFromConfig(multiLoaderConfig)
 
 	// Determine Node Group for Knative platform
-	var nodeGroup types.NodeGroup
 	if strings.HasPrefix(platform, "Knative") && len(multiLoaderConfig.Metrics) > 0 {
-		nodeGroup = ml_common.DetermineNodesIPs(multiLoaderConfig)
-		ml_common.CheckKnativeSpecificMultiLoaderConfig(multiLoaderConfig, nodeGroup)
+		ml_common.DetermineNodesIPs(&multiLoaderConfig)
+		ml_common.CheckKnativeSpecificMultiLoaderConfig(multiLoaderConfig)
 	}
 
 	// Create metric manager
-	metricManager := metric.NewMetricManager(platform, multiLoaderConfig.Metrics, nodeGroup)
+	metricManager := metric.NewMetricManager(platform, multiLoaderConfig)
 
 	runner := MultiLoaderRunner{
 		MultiLoaderConfig: multiLoaderConfig,
@@ -68,7 +66,6 @@ func NewMultiLoaderRunner(configPath string, verbosity string, failFast bool) (*
 		DryRun:            false,
 		Platform:          platform,
 		FailFast:          failFast,
-		NodeGroup:         nodeGroup,
 		MetricManager:     metricManager,
 	}
 

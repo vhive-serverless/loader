@@ -25,17 +25,17 @@ const (
 )
 
 type MetricManager struct {
-	platform         string
-	metricsToCollect []string
-	nodeGroup        types.NodeGroup
-	outputDir        string
+	platform          string
+	metricsToCollect  []string
+	outputDir         string
+	multiLoaderConfig types.MultiLoaderConfiguration
 }
 
-func NewMetricManager(platform string, metricsToCollect []string, nodeGroup types.NodeGroup) *MetricManager {
+func NewMetricManager(platform string, multiLoaderConfig types.MultiLoaderConfiguration) *MetricManager {
 	return &MetricManager{
-		platform:         platform,
-		metricsToCollect: metricsToCollect,
-		nodeGroup:        nodeGroup,
+		platform:          platform,
+		metricsToCollect:  multiLoaderConfig.Metrics,
+		multiLoaderConfig: multiLoaderConfig,
 	}
 }
 
@@ -143,35 +143,35 @@ func (m *MetricManager) collectTOPMetric() {
 * Collects autoscaler logs from autoscaler node
 **/
 func (m *MetricManager) collectAutoScalerLogs() {
-	log.Debug("Collecting autoscaler logs from node: ", m.nodeGroup.AutoScalerNode)
+	log.Debug("Collecting autoscaler logs from node: ", m.multiLoaderConfig.AutoScalerNode)
 	autoScalerOutputDir := path.Join(m.outputDir, AUTOSCALER_DIR_NAME)
 	err := os.MkdirAll(autoScalerOutputDir, 0755)
 	if err != nil {
 		log.Fatal(err)
 	}
 	// Retrieve autoscaler logs
-	ml_common.CopyRemoteFile(m.nodeGroup.AutoScalerNode, "/var/log/pods/knative-serving_autoscaler-*/autoscaler/*", autoScalerOutputDir)
+	ml_common.CopyRemoteFile(m.multiLoaderConfig.AutoScalerNode, "/var/log/pods/knative-serving_autoscaler-*/autoscaler/*", autoScalerOutputDir)
 }
 
 /**
 * Collects activator logs from activator node
 **/
 func (m *MetricManager) collectActivatorLogs() {
-	log.Debug("Collecting activator logs from node: ", m.nodeGroup.ActivatorNode)
+	log.Debug("Collecting activator logs from node: ", m.multiLoaderConfig.ActivatorNode)
 	activatorOutputDir := path.Join(m.outputDir, ACTIVATOR_DIR_NAME)
 	err := os.MkdirAll(activatorOutputDir, 0755)
 	if err != nil {
 		log.Fatal(err)
 	}
 	// Retrieve activator logs
-	ml_common.CopyRemoteFile(m.nodeGroup.ActivatorNode, "/var/log/pods/knative-serving_activator-*/activator/*", activatorOutputDir)
+	ml_common.CopyRemoteFile(m.multiLoaderConfig.ActivatorNode, "/var/log/pods/knative-serving_activator-*/activator/*", activatorOutputDir)
 }
 
 /**
 * Collects prometheus snapshot from master node
 **/
 func (m *MetricManager) collectPrometheusSnapshot() {
-	log.Debug("Collecting prometheus snapshot from node: ", m.nodeGroup.MasterNode)
+	log.Debug("Collecting prometheus snapshot from node: ", m.multiLoaderConfig.MasterNode)
 	// Ensure output dir exists
 	promethOutputDir := path.Join(m.outputDir, PROMETH_DIR_NAME)
 	err := os.MkdirAll(promethOutputDir, 0755)
@@ -192,12 +192,12 @@ func (m *MetricManager) collectPrometheusSnapshot() {
 	}
 	// Copy prometheus snapshot to file
 	var tempSnapshotDir = "~/tmp/prometheus_snapshot"
-	ml_common.RunRemoteCommand(m.nodeGroup.MasterNode, "mkdir -p "+tempSnapshotDir)
-	ml_common.RunRemoteCommand(m.nodeGroup.MasterNode, "kubectl cp -n monitoring "+"prometheus-prometheus-kube-prometheus-prometheus-0:/prometheus/snapshots/ "+
+	ml_common.RunRemoteCommand(m.multiLoaderConfig.MasterNode, "mkdir -p "+tempSnapshotDir)
+	ml_common.RunRemoteCommand(m.multiLoaderConfig.MasterNode, "kubectl cp -n monitoring "+"prometheus-prometheus-kube-prometheus-prometheus-0:/prometheus/snapshots/ "+
 		"-c prometheus "+tempSnapshotDir)
-	ml_common.CopyRemoteFile(m.nodeGroup.MasterNode, tempSnapshotDir, path.Dir(promethOutputDir))
+	ml_common.CopyRemoteFile(m.multiLoaderConfig.MasterNode, tempSnapshotDir, path.Dir(promethOutputDir))
 	// remove temp directory
-	ml_common.RunRemoteCommand(m.nodeGroup.MasterNode, "rm -rf "+tempSnapshotDir)
+	ml_common.RunRemoteCommand(m.multiLoaderConfig.MasterNode, "rm -rf "+tempSnapshotDir)
 }
 
 /**
@@ -210,7 +210,7 @@ func (m *MetricManager) fetchPrometheusSnapshot(maxAttempts int) (types.Promethe
 	re := regexp.MustCompile(`\{.*\}`)
 
 	for attempts := maxAttempts; attempts > 0; attempts-- {
-		out, err := exec.Command("ssh", m.nodeGroup.MasterNode, snapshotCmd).CombinedOutput()
+		out, err := exec.Command("ssh", m.multiLoaderConfig.MasterNode, snapshotCmd).CombinedOutput()
 		if err != nil {
 			// Last attempt and still failed
 			if attempts == 1 {
@@ -238,11 +238,11 @@ func (m *MetricManager) fetchPrometheusSnapshot(maxAttempts int) (types.Promethe
 **/
 func (m *MetricManager) uniqueNodeList() []string {
 	uniqueNodes := make(map[string]bool)
-	uniqueNodes[m.nodeGroup.MasterNode] = true
-	uniqueNodes[m.nodeGroup.LoaderNode] = true
-	uniqueNodes[m.nodeGroup.AutoScalerNode] = true
-	uniqueNodes[m.nodeGroup.ActivatorNode] = true
-	for _, node := range m.nodeGroup.WorkerNodes {
+	uniqueNodes[m.multiLoaderConfig.MasterNode] = true
+	uniqueNodes[m.multiLoaderConfig.LoaderNode] = true
+	uniqueNodes[m.multiLoaderConfig.AutoScalerNode] = true
+	uniqueNodes[m.multiLoaderConfig.ActivatorNode] = true
+	for _, node := range m.multiLoaderConfig.WorkerNodes {
 		uniqueNodes[node] = true
 	}
 	nodes := make([]string, 0, len(uniqueNodes))

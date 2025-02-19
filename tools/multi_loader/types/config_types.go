@@ -45,14 +45,6 @@ type LoaderExperiment struct {
 	PostScript    string                 `json:"PostScript"`
 }
 
-type NodeGroup struct {
-	MasterNode     string
-	AutoScalerNode string
-	ActivatorNode  string
-	LoaderNode     string
-	WorkerNodes    []string
-}
-
 type PrometheusSnapshot struct {
 	Status    string      `json:"status"`
 	ErrorType string      `json:"errorType"`

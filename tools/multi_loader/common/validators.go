@@ -59,7 +59,7 @@ func CheckMultiLoaderConfig(multiLoaderConfig types.MultiLoaderConfiguration) {
 	log.Debug("All experiments configs are valid")
 }
 
-func CheckKnativeSpecificMultiLoaderConfig(multiLoaderConfig types.MultiLoaderConfiguration, nodeGroup types.NodeGroup) {
+func CheckKnativeSpecificMultiLoaderConfig(multiLoaderConfig types.MultiLoaderConfiguration) {
 	log.Debug("Checking platform specific multi-loader configuration")
 	// Check knative specific configurations
 	// Check if metrics are valid
@@ -67,11 +67,11 @@ func CheckKnativeSpecificMultiLoaderConfig(multiLoaderConfig types.MultiLoaderCo
 		CheckCollectableMetrics(metric)
 	}
 	// Check nodes
-	CheckNode(nodeGroup.MasterNode)
-	CheckNode(nodeGroup.AutoScalerNode)
-	CheckNode(nodeGroup.ActivatorNode)
-	CheckNode(nodeGroup.LoaderNode)
-	for _, node := range nodeGroup.WorkerNodes {
+	CheckNode(multiLoaderConfig.MasterNode)
+	CheckNode(multiLoaderConfig.AutoScalerNode)
+	CheckNode(multiLoaderConfig.ActivatorNode)
+	CheckNode(multiLoaderConfig.LoaderNode)
+	for _, node := range multiLoaderConfig.WorkerNodes {
 		CheckNode(node)
 	}
 	log.Debug("Nodes are reachable")

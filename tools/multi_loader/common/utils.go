@@ -94,15 +94,8 @@ func DeterminePodIP(podNamePrefix PodType) string {
 	return strings.Trim(nodeIp, " ")
 }
 
-func DetermineNodesIPs(multiLoaderConfig types.MultiLoaderConfiguration) types.NodeGroup {
+func DetermineNodesIPs(multiLoaderConfig *types.MultiLoaderConfiguration) {
 	log.Debug("Determining node IPs")
-	nodeGroup := types.NodeGroup{
-		MasterNode:     multiLoaderConfig.MasterNode,
-		AutoScalerNode: multiLoaderConfig.AutoScalerNode,
-		ActivatorNode:  multiLoaderConfig.ActivatorNode,
-		LoaderNode:     multiLoaderConfig.LoaderNode,
-		WorkerNodes:    multiLoaderConfig.WorkerNodes,
-	}
 
 	var masterIP, loaderIP string
 	var workerIPs []string
@@ -123,15 +116,14 @@ func DetermineNodesIPs(multiLoaderConfig types.MultiLoaderConfiguration) types.N
 		loaderIP = DetermineNodeIP(Loader)
 		workerIPs = DetermineWorkerNodeIPs()
 	}
-	assignDefaults(&nodeGroup.MasterNode, masterIP)
-	assignDefaults(&nodeGroup.LoaderNode, loaderIP)
-	assignDefaultsSlice(&nodeGroup.WorkerNodes, workerIPs)
+	assignDefaults(&multiLoaderConfig.MasterNode, masterIP)
+	assignDefaults(&multiLoaderConfig.LoaderNode, loaderIP)
+	assignDefaultsSlice(&multiLoaderConfig.WorkerNodes, workerIPs)
 
-	assignDefaults(&nodeGroup.AutoScalerNode, DeterminePodIP(AutoScalerPod))
-	assignDefaults(&nodeGroup.ActivatorNode, DeterminePodIP(ActivatorPod))
+	assignDefaults(&multiLoaderConfig.AutoScalerNode, DeterminePodIP(AutoScalerPod))
+	assignDefaults(&multiLoaderConfig.ActivatorNode, DeterminePodIP(ActivatorPod))
 
-	log.Trace("Node IPs determined", nodeGroup)
-	return nodeGroup
+	log.Trace("Node IPs determined", multiLoaderConfig)
 }
 
 func IsKinD() bool {
