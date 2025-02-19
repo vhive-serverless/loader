@@ -2,16 +2,20 @@ package clients
 
 import (
 	"bytes"
+	"crypto/rand"
 	"encoding/json"
+	"io"
+	"mime/multipart"
+	"net/http"
+	"os"
+	"strconv"
+	"strings"
+	"time"
+
 	log "github.com/sirupsen/logrus"
 	"github.com/vhive-serverless/loader/pkg/common"
 	"github.com/vhive-serverless/loader/pkg/config"
 	mc "github.com/vhive-serverless/loader/pkg/metric"
-	"io"
-	"net/http"
-	"strconv"
-	"strings"
-	"time"
 )
 
 type FunctionResponse struct {
@@ -33,6 +37,52 @@ func newHTTPInvoker(cfg *config.LoaderConfiguration) *httpInvoker {
 	}
 }
 
+var payload []byte = nil
+var contentType string = "application/octet-stream"
+
+func CreateRandomPayload(sizeInMB float64) *bytes.Buffer {
+	if payload == nil {
+		byteCount := int(sizeInMB * 1024.0 * 1024.0) // MB -> B
+		payload = make([]byte, byteCount)
+
+		n, err := rand.Read(payload)
+		if err != nil || n != byteCount {
+			log.Errorf("Failed to generate random %d bytes.", byteCount)
+		}
+	}
+
+	return bytes.NewBuffer(payload)
+}
+
+func CreateFilePayload(filePath string) *bytes.Buffer {
+	if payload == nil {
+		file, err := os.Open(filePath)
+		if err != nil {
+			log.Fatalf("Failed to open file %s: %v", filePath, err)
+		}
+
+		buffer := &bytes.Buffer{}
+		writer := multipart.NewWriter(buffer)
+		part, err := writer.CreateFormFile("images", "invitro.payload")
+		if err != nil {
+			log.Fatalf("Failed to create form file: %v", err)
+		}
+
+		if _, err = io.Copy(part, file); err != nil {
+			log.Fatalf("Failed to enter file into the form: %v", err)
+		}
+		if err = writer.Close(); err != nil {
+			log.Fatalf("Failed to close writer: %v", err)
+		}
+
+		payload = buffer.Bytes()
+		contentType = writer.FormDataContentType()
+		return buffer
+	}
+
+	return bytes.NewBuffer(payload)
+}
+
 func (i *httpInvoker) Invoke(function *common.Function, runtimeSpec *common.RuntimeSpecification) (bool, *mc.ExecutionRecord) {
 	isDandelion := strings.Contains(strings.ToLower(i.cfg.Platform), "dandelion")
 	isKnative := strings.Contains(strings.ToLower(i.cfg.Platform), "knative")
@@ -48,8 +98,6 @@ func (i *httpInvoker) Invoke(function *common.Function, runtimeSpec *common.Runt
 	////////////////////////////////////
 	// INVOKE FUNCTION
 	////////////////////////////////////
-	start := time.Now()
-	record.StartTime = start.UnixMicro()
 
 	requestBody := &bytes.Buffer{}
 	/*if body := composeDandelionMatMulBody(function.Name); isDandelion && body != nil {
@@ -58,8 +106,22 @@ func (i *httpInvoker) Invoke(function *common.Function, runtimeSpec *common.Runt
 	if body := composeBusyLoopBody(function.Name, function.DirigentMetadata.Image, runtimeSpec.Runtime, function.DirigentMetadata.IterationMultiplier); isDandelion && body != nil {
 		requestBody = body
 	}
+	if i.cfg.RpsTarget != 0 {
+		ts := time.Now()
+		if i.cfg.RpsFile != "" {
+			requestBody = CreateFilePayload(i.cfg.RpsFile)
+			log.Debugf("Took %v to create file body.", time.Since(ts))
+		} else {
+			requestBody = CreateRandomPayload(i.cfg.RpsDataSizeMB)
+			log.Debugf("Took %v to generate request body.", time.Since(ts))
+		}
+	}
+
+	start := time.Now()
+	record.StartTime = start.UnixMicro()
 
 	req, err := http.NewRequest("POST", "http://"+function.Endpoint, requestBody)
+	req.Header.Add("Content-Type", contentType)
 	if err != nil {
 		log.Errorf("Failed to create a HTTP request - %v\n", err)
 
