@@ -104,18 +104,28 @@ func DetermineNodesIPs(multiLoaderConfig types.MultiLoaderConfiguration) types.N
 		WorkerNodes:    multiLoaderConfig.WorkerNodes,
 	}
 
-	// Only a single node will be present in KinD Cluster
-	if IsKinD() {
-		log.Debug("KinD Cluster detected")
+	var masterIP, loaderIP string
+	var workerIPs []string
+
+	switch {
+	case IsKinD():
 		nodeIP := DetermineNodeIP(Worker)
-		assignDefaults(&nodeGroup.MasterNode, nodeIP)
-		assignDefaults(&nodeGroup.LoaderNode, nodeIP)
-		assignDefaultsSlice(&nodeGroup.WorkerNodes, []string{nodeIP})
-	} else {
-		assignDefaults(&nodeGroup.MasterNode, DetermineNodeIP(Master))
-		assignDefaults(&nodeGroup.LoaderNode, DetermineNodeIP(Loader))
-		assignDefaultsSlice(&nodeGroup.WorkerNodes, DetermineWorkerNodeIPs())
+		masterIP = nodeIP
+		loaderIP = nodeIP
+		workerIPs = []string{nodeIP}
+	case IsSingleNode():
+		nodeIP := DetermineNodeIP(SingleNode)
+		masterIP = nodeIP
+		loaderIP = nodeIP
+		workerIPs = []string{nodeIP}
+	default:
+		masterIP = DetermineNodeIP(Master)
+		loaderIP = DetermineNodeIP(Loader)
+		workerIPs = DetermineWorkerNodeIPs()
 	}
+	assignDefaults(&nodeGroup.MasterNode, masterIP)
+	assignDefaults(&nodeGroup.LoaderNode, loaderIP)
+	assignDefaultsSlice(&nodeGroup.WorkerNodes, workerIPs)
 
 	assignDefaults(&nodeGroup.AutoScalerNode, DeterminePodIP(AutoScalerPod))
 	assignDefaults(&nodeGroup.ActivatorNode, DeterminePodIP(ActivatorPod))
@@ -131,6 +141,15 @@ func IsKinD() bool {
 		return false
 	}
 	return strings.TrimSpace(string(out)) == "knative"
+}
+
+func IsSingleNode() bool {
+	cmd := exec.Command("sh", "-c", "kubectl get nodes --show-labels --no-headers | grep nodetype=singlenode | wc -l")
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return false
+	}
+	return strings.TrimSpace(string(out)) == "1"
 }
 
 // Helper functions	for assigning default values

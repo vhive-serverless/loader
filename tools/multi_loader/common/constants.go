@@ -21,12 +21,14 @@ const (
 	Worker NodeType = iota
 	Master
 	Loader
+	SingleNode
 )
 
 var NodeTypeStrings = []string{
-	Worker: "worker",
-	Master: "master",
-	Loader: "monitoring",
+	Worker:     "worker",
+	Master:     "master",
+	Loader:     "monitoring",
+	SingleNode: "singlenode",
 }
 
 func (n NodeType) String() string {
