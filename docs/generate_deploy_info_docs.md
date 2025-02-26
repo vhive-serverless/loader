@@ -22,7 +22,7 @@ The `deploy_info.json` has the following schema:
 
 ## The `PredeploymentPath` is the path to the YAML file, which is applied via `kubectl apply -f`, before creating the service under `YamlLocation`. This pre-deployment step is required in some vSwarm benchmarks, like `cartservice` which depends on a separate service `online-shop-database` before it can be started.
 
-Similarly, the `workloads/container/generate_all_yamls.py` is a wrapper script that calls the `generate-yamls.py` script for each vSwarm benchmark in the `vSwarm_deploy_metadata.tar.gz`. The `generate-yamls.py` Python script parametrizes the YAML script for the benchmark for different configurations, and creates YAML files accordingly. 
+Similarly, the `workloads/container/generate_all_yamls.py` is a wrapper script that calls the `generate-yamls.py` script for each vSwarm benchmark in the `vSwarm_deploy_metadata.tar.gz`. The `generate-yamls.py` Python script parameterize the YAML script for the benchmark for different configurations, and creates YAML files accordingly. 
 
 While the YAMLs are pre-generated inside the `vSwarm_deploy_metadata.tar.gz` tarball, to regenerate the YAMLs, run this from the root of this repository:
 ```console
