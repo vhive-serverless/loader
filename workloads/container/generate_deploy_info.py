@@ -12,15 +12,15 @@ import json
 
 # Get the current working directory
 current_dir = os.getcwd()+"/yamls"
-
+print(current_dir)
 # Get the list of directories
-directories = [d for d in os.listdir(current_dir) if os.path.isdir(d)]
-
+directories = [d for d in os.listdir(current_dir) if d != "deploy_info.json"]
+print(directories)
 predeployment_required = ["hotel-app", "image-rotate-python", "image-rotate-go", "video-processing", "video-analytics-standalone", "online-shop"]
 
 deploy_info = {}
 for directory in directories:
-    os.chdir(directory)
+    os.chdir(os.path.join(current_dir, directory))
     # Get the list of yaml files
     yaml_files = glob.glob("*.yaml")
     function_name = {}

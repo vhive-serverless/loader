@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"sync"
 
+	"github.com/go-cmd/cmd"
 	log "github.com/sirupsen/logrus"
 	"github.com/vhive-serverless/loader/pkg/common"
 	"github.com/vhive-serverless/loader/pkg/config"
@@ -106,13 +107,12 @@ func knativeDeploySingleFunction(function *common.Function, yamlPath string, isP
 		// second, then round to an integer as that is what the knative config expects
 	}
 	for _, path := range function.PredeploymentPath {
-		out := exec.Command(
-			"bash",
-			"./pkg/driver/deployment/predeploy_vswarm.sh",
-			path,
-		)
-		response, _ := out.CombinedOutput()
-		log.Debug("Predeployment command response is", string(response))
+		envCmd := cmd.NewCmd("kubectl", "apply", "-f", path)
+		status := <-envCmd.Start()
+
+		for _, line := range status.Stdout {
+			fmt.Println("Predeployment command response is" + line)
+		}
 	}
 	cmd := exec.Command(
 		"bash",

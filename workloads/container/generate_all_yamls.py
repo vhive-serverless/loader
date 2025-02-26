@@ -15,6 +15,6 @@ for directory in directories:
     # Run the python script
     subprocess.run(['python3', 'generate-yamls.py'])
     print(f"Generated yaml files for {directory}")
-    os.chdir(current_dir)
+    os.chdir(yaml_dir)
 
 print("Generated all yaml files")
