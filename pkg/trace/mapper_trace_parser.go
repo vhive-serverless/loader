@@ -22,7 +22,13 @@ type DeploymentInfo struct {
 	PredeploymentPath []string
 }
 
-type JSONParser map[string]DeploymentInfo
+type MapperOutput struct {
+	ProxyFunction string `json:"proxy-function"`
+}
+
+type functionToDeploymentInfo map[string]DeploymentInfo
+
+type functionToProxy map[string]MapperOutput
 
 func NewMapperParser(directoryPath string, totalDuration int) *MapperTraceParser {
 	return &MapperTraceParser{
@@ -33,7 +39,7 @@ func NewMapperParser(directoryPath string, totalDuration int) *MapperTraceParser
 	}
 }
 
-func (p *MapperTraceParser) extractFunctions(mapperOutput map[string]map[string]string, deploymentInfo JSONParser, dirPath string) []*common.Function {
+func (p *MapperTraceParser) extractFunctions(mapperOutput functionToProxy, deploymentInfo functionToDeploymentInfo, dirPath string) []*common.Function {
 	var result []*common.Function
 
 	invocations := parseInvocationTrace(dirPath+"/invocations.csv", p.duration)
@@ -48,9 +54,9 @@ func (p *MapperTraceParser) extractFunctions(mapperOutput map[string]map[string]
 		hashFunction := invocationStats.HashFunction
 		hashApp := invocationStats.HashApp
 		hashOwner := invocationStats.HashOwner
-		proxyFunction := mapperOutput[hashFunction+hashOwner+hashApp]["proxy-function"]
+		proxyFunction := mapperOutput[hashFunction+hashOwner+hashApp].ProxyFunction
 		yamlPath := deploymentInfo[proxyFunction].YamlLocation
-		predeploymentPaths := deploymentInfo[proxyFunction].PredeploymentPath
+		predeploymentPath := deploymentInfo[proxyFunction].PredeploymentPath
 		function := &common.Function{
 			Name: fmt.Sprintf("%s-%d-%d", proxyFunction, i, p.functionNameGenerator.Uint64()),
 
@@ -58,7 +64,7 @@ func (p *MapperTraceParser) extractFunctions(mapperOutput map[string]map[string]
 			RuntimeStats:      runtimeByHashFunction[hashFunction],
 			MemoryStats:       memoryByHashFunction[hashFunction],
 			YAMLPath:          yamlPath,
-			PredeploymentPath: predeploymentPaths,
+			PredeploymentPath: predeploymentPath,
 		}
 
 		result = append(result, function)
@@ -69,8 +75,8 @@ func (p *MapperTraceParser) extractFunctions(mapperOutput map[string]map[string]
 
 func (p *MapperTraceParser) Parse() []*common.Function {
 	var functions []*common.Function
-	var mapperOutput map[string]map[string]string // HashFunction mapped to vSwarm function yaml.
-	var deploymentInfo JSONParser
+	var mapperOutput functionToProxy
+	var deploymentInfo functionToDeploymentInfo
 	// Read the deployment info file for yaml locations and predeployment commands if any
 	deploymentInfoFile, err := os.ReadFile("test_data/test_deploy_info.json")
 	if err != nil {

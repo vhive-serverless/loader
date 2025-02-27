@@ -110,7 +110,7 @@ To account for difference in CPU performance set `ITERATIONS_MULTIPLIER=102` if 
 Cloudlab `xl170` or `d430` machines. (Date of measurement: 18-Oct-2022)
 
 ## Executing vSwarm functions
-If the input trace directory has a `mapper_output.json` file, which you would like to use as profiles for benchmark execution in the loader, run the following from the root of this directory:
+If you would like to use vSwarm benchmarks as profile functions to execute, first you need to generate a `mapper_output.json` using the `mapper` tool. Please refer to `mapper.md` docs for usage of the mapper tool to generate an output file. Once the `mapper_output.json` has been generated in the input trace directory, next run the following from the root of this repository:
 
 ```console
 # install pre-requisites
@@ -120,11 +120,12 @@ git lfs install
 git lfs fetch
 git lfs checkout
 ```
-This retrieves the `yamls.tar.gz` from Git LFS. Then, untar this tarball by running the following command from the root of this directory:
+This retrieves the `vSwarm_deploy_metadata.tar.gz` from Git LFS. Then, untar this tarball by running the following command from the root of this repository:
 
 ```bash
 $ tar -xzvf workloads/container/vSwarm_deploy_metadata.tar.gz -C workloads/container/
 ```
+This untar the tarball into the `workloads/container/yamls` directory, which contains deployment information and deployment YAML files for all vSwarm benchmarks. If you would like to change some of these deployment files of regenerate them, refer to `generate_deploy_info_docs.md` for an outline of what these deployment files are, and how you can regenerate them.
 
 ## Single execution
 
@@ -138,11 +139,11 @@ To run load generator to use vSwarm functions based on `mapper_output.json` run 
 ```bash
 $ go run cmd/loader.go --config cmd/config_vswarm_trace.json
 ```
+The difference between instructing the loader to run vSwarm functions is by setting the `VSwarm` flag in the loader configuration to `true`. For information on how to configure the workload for load generator, please refer to `docs/configuration.md`.
+
 Additionally, one can specify log verbosity argument as `--verbosity [info, debug, trace]`. The default value is `info`.
 
 To execute in a dry run mode without generating any load, set the `--dry-run` flag to `true`. This is useful for testing and validating configurations without executing actual requests.
-
-For to configure the workload for load generator, please refer to `docs/configuration.md`.
 
 There are a couple of constants that should not be exposed to the users. They can be examined and changed
 in `pkg/common/constants.go`.
