@@ -4,7 +4,7 @@ The `deploy_info.json` file is used to identify deployment information for servi
 
 ## Schema and Usage
 
-The `deploy_info.json` file in the `vSwarm_deploy_metadata.tar.gz`  is used to identify the relative file paths for the Knative YAML manifests for deploying vSwarm functions. It is generated using `workloads/container/generate_deploy_info.py` Python script, which outputs a JSON that embeds the yaml-location and pre-deployment commands for every vSwarm function. It also contains the path of YAML files needed as part of the pre-deployment commands to run certain vSwarm benchmarks, for example the `online-shop-database` which requires to be deployed before running `cartservice` benchmark.
+The `deploy_info.json` file in the `vSwarm_deploy_metadata.tar.gz`  is used to identify the relative file paths for the Knative YAML manifests for deploying vSwarm functions. It also contains the path of YAML files needed as part of the pre-deployment commands to run certain vSwarm benchmarks, for example the `online-shop-database` which requires to be deployed before running `cartservice` benchmark.
 
 The `deploy_info.json` has the following schema:
 ```console
@@ -17,7 +17,8 @@ The `deploy_info.json` has the following schema:
 }
 ```
 
-The `PredeploymentPath` is the path to the YAML file, which is applied via `kubectl apply -f`, before creating the service under `YamlLocation`. This pre-deployment step is required in some vSwarm benchmarks, like `cartservice` which depends on a separate service `online-shop-database` before it can be started.
+The `PredeploymentPath` is the path to the YAML file, which is applied via `kubectl apply -f`, before creating the service under `YamlLocation`. 
+
 ## Deployment File Generation
 
 While the `deploy_info.json` file ships with the `vSwarm_deploy_metadata.tar.gz`, In order to regenerate the `deploy_info.json` run from the root of this repository:

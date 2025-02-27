@@ -134,12 +134,12 @@ To run load generator use the following command:
 ```bash
 $ go run cmd/loader.go --config cmd/config_knative_trace.json
 ```
-To run load generator to use vSwarm functions based on `mapper_output.json` run the following:
+To run load generator with vSwarm functions based on `mapper_output.json` run the following:
 
 ```bash
 $ go run cmd/loader.go --config cmd/config_vswarm_trace.json
 ```
-The difference between instructing the loader to run vSwarm functions is by setting the `VSwarm` flag in the loader configuration to `true`. For information on how to configure the workload for load generator, please refer to `docs/configuration.md`.
+To direct the loader to execute vSwarm functions, set the `VSwarm` flag in the loader configuration `true`. For information on how to configure the workload for load generator, please refer to `docs/configuration.md`.
 
 Additionally, one can specify log verbosity argument as `--verbosity [info, debug, trace]`. The default value is `info`.
 
