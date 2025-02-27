@@ -126,6 +126,20 @@ func DetermineNodesIPs(multiLoaderConfig *types.MultiLoaderConfiguration) {
 	log.Trace("Node IPs determined", multiLoaderConfig)
 }
 
+/**
+* Helper function to get unique node list
+**/
+func GetUniqueNodeList() []string {
+	cmd := exec.Command("sh", "-c", "kubectl get nodes --show-labels --no-headers -o wide | awk '{print $6}'")
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		log.Fatal(err)
+	}
+	nodes := strings.Fields(string(out))
+	log.Debug("Unique Node List: ", nodes)
+	return nodes
+}
+
 func IsKinD() bool {
 	cmd := exec.Command("sh", "-c", "kind get clusters")
 	out, err := cmd.CombinedOutput()
