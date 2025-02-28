@@ -25,6 +25,14 @@ As a wrapper around loader, multi-loader requires the initial cluster setup to b
 > **_Note_**: 
 > Node addresses are optional as Multi-Loader uses `kubectl` to find them. If needed, you can define addresses manually, which will override the automatic detection.
 
+#### **Metrics Collected**  
+More information regarding the metrics that can be collected at the end of each experiment:
+
+- **activator** – Captures Knative activator latency and request handling performance  
+- **autoscaler** – Tracks Knative autoscaler decisions, scaling events, and resource utilization
+- **top** – Provides CPU and memory usage statistics for each nodes
+- **prometheus** – Gathers system-wide performance metrics from Prometheus  
+
 ### LoaderStudy
 | Parameter name        | Data type              | Possible values               | Default value | Description                                                        |
 |-----------------------|------------------------|-------------------------------|---------------|--------------------------------------------------------------------|
