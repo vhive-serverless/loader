@@ -191,13 +191,11 @@ func (m *MetricManager) collectPrometheusSnapshot() {
 		return
 	}
 	// Copy prometheus snapshot to file
-	var tempSnapshotDir = "~/tmp/prometheus_snapshot"
-	ml_common.RunRemoteCommand(m.multiLoaderConfig.MasterNode, "mkdir -p "+tempSnapshotDir)
-	ml_common.RunRemoteCommand(m.multiLoaderConfig.MasterNode, "kubectl cp -n monitoring "+"prometheus-prometheus-kube-prometheus-prometheus-0:/prometheus/snapshots/ "+
-		"-c prometheus "+tempSnapshotDir)
-	ml_common.CopyRemoteFile(m.multiLoaderConfig.MasterNode, tempSnapshotDir, path.Dir(promethOutputDir))
-	// remove temp directory
-	ml_common.RunRemoteCommand(m.multiLoaderConfig.MasterNode, "rm -rf "+tempSnapshotDir)
+	_, err = exec.Command("kubectl cp -n monitoring prometheus-prometheus-kube-prometheus-prometheus-0:/prometheus/snapshots/ -c prometheus " + path.Dir(promethOutputDir)).CombinedOutput()
+	if err != nil {
+		log.Error("Failed to copy Prometheus snapshot data from monitoring pod using kubectl. ", err)
+		return
+	}
 }
 
 /**
