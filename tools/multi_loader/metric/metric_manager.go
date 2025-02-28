@@ -210,7 +210,7 @@ func (m *MetricManager) collectPrometheusSnapshot() {
 		return
 	}
 	// Copy prometheus snapshot to file
-	_, err = exec.Command("kubectl cp -n monitoring prometheus-prometheus-kube-prometheus-prometheus-0:/prometheus/snapshots/ -c prometheus " + path.Dir(promethOutputDir)).CombinedOutput()
+	_, err = exec.Command("kubectl cp -n monitoring prometheus-prometheus-kube-prometheus-prometheus-0:/prometheus/snapshots/ -c prometheus " + promethOutputDir).CombinedOutput()
 	if err != nil {
 		log.Error("Failed to copy Prometheus snapshot data from monitoring pod using kubectl. ", err)
 		return
