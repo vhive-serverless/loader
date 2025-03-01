@@ -83,20 +83,20 @@ func (p *MapperTraceParser) Parse() []*common.Function {
 		wd, _ := os.Getwd()
 		deploymentInfoFile, err = os.ReadFile(wd + "/workloads/container/yamls/deploy_info.json")
 		if err != nil {
-			log.Warn("No deployment info file")
+			log.Fatal("No deployment info file")
 		}
 	}
 
 	err = json.Unmarshal(deploymentInfoFile, &deploymentInfo)
 	if err != nil {
-		log.Warn("Failed to unmarshal deployment info file")
+		log.Fatal("Failed to unmarshal deployment info file")
 	}
 
 	mapperFile, err := os.ReadFile(p.DirectoryPath + "/mapper_output.json")
 	if err != nil {
 		traces, err := os.ReadDir(p.DirectoryPath)
 		if err != nil {
-			log.Warn("No mapper output file")
+			log.Fatal("No mapper output file")
 		}
 
 		for _, trace := range traces {
@@ -108,7 +108,7 @@ func (p *MapperTraceParser) Parse() []*common.Function {
 			}
 			err = json.Unmarshal(mapperFile, &mapperOutput)
 			if err != nil {
-				log.Warn("Failed to unmarshal mapper output file")
+				log.Fatal("Failed to unmarshal mapper output file")
 			}
 			result := p.extractFunctions(mapperOutput, deploymentInfo, p.DirectoryPath+"/"+traceName)
 			functions = append(functions, result...)
@@ -119,7 +119,7 @@ func (p *MapperTraceParser) Parse() []*common.Function {
 
 	err = json.Unmarshal(mapperFile, &mapperOutput)
 	if err != nil {
-		log.Warn("Failed to unmarshal mapper output file")
+		log.Fatal("Failed to unmarshal mapper output file")
 	}
 
 	functions = p.extractFunctions(mapperOutput, deploymentInfo, p.DirectoryPath)
